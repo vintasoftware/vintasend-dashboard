@@ -13,16 +13,16 @@
  * for the request, so the cases below still turn on what the dialog sends and
  * what it does with the answer.
  */
-const mutateAsync = jest.fn();
-const toastSuccess = jest.fn();
-const toastError = jest.fn();
+const mutateAsync = vi.fn();
+const toastSuccess = vi.fn();
+const toastError = vi.fn();
 
-jest.mock('vintasend-dashboard-core', () => ({
-  ...jest.requireActual('vintasend-dashboard-core'),
+vi.mock('vintasend-dashboard-core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vintasend-dashboard-core')>()),
   useResendNotification: () => ({ mutateAsync, isPending: false }),
 }));
 
-jest.mock('sonner', () => ({
+vi.mock('sonner', () => ({
   toast: {
     success: (...args: unknown[]) => toastSuccess(...(args as [])),
     error: (...args: unknown[]) => toastError(...(args as [])),
@@ -36,8 +36,8 @@ import { ResendNotificationDialog } from '@/app/components/resend-notification-d
 const renderDialog = (
   props: Partial<React.ComponentProps<typeof ResendNotificationDialog>> = {},
 ) => {
-  const onClose = jest.fn();
-  const onResent = jest.fn();
+  const onClose = vi.fn();
+  const onResent = vi.fn();
   const result = render(
     <ResendNotificationDialog
       notificationId="notif-1"
@@ -52,7 +52,7 @@ const renderDialog = (
 const confirm = () => screen.getByRole('button', { name: 'Resend Notification' });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mutateAsync.mockResolvedValue({ data: { id: 'notif-2' } });
 });
 

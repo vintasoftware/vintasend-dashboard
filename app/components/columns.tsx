@@ -1,6 +1,6 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef, rowSortingFeature, tableFeatures } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import {
   ArrowUpDown,
@@ -12,7 +12,12 @@ import {
   XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-
+import type {
+  Notification,
+  NotificationStatus,
+  NotificationType,
+  OneOffNotification,
+} from 'vintasend-dashboard-core';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,12 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type {
-  Notification,
-  NotificationStatus,
-  NotificationType,
-  OneOffNotification,
-} from 'vintasend-dashboard-core';
 
 /**
  * Maps notification status to badge variant colors.
@@ -126,12 +125,14 @@ export interface ColumnOptions {
   onCancel?: (id: string) => void;
 }
 
-function renderSortableHeader(label: string) {
-  const SortableHeader = ({
-    column,
-  }: {
-    column: { toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | 'asc' | 'desc' };
-  }) => (
+function SortableHeader({
+  label,
+  column,
+}: {
+  label: string;
+  column: { toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | 'asc' | 'desc' };
+}) {
+  return (
     <Button
       variant="ghost"
       onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
@@ -141,23 +142,31 @@ function renderSortableHeader(label: string) {
       <ArrowUpDown className="ml-1 h-3 w-3" />
     </Button>
   );
-  SortableHeader.displayName = `SortableHeader(${label})`;
-  return SortableHeader;
 }
+
+/**
+ * The TanStack Table features the notifications table uses. Sorting is the only
+ * one: the API paginates and filters, and the sortable headers drive its
+ * `orderByField`, so the table itself only has to track the sort state.
+ */
+export const notificationTableFeatures = tableFeatures({ rowSortingFeature });
+
+export type NotificationTableFeatures = typeof notificationTableFeatures;
 
 /**
  * Creates TanStack column definitions for the notifications table.
  * Accepts options for action callbacks.
  */
-export function createColumns(options: ColumnOptions = {}): ColumnDef<Notification>[] {
+export function createColumns(
+  options: ColumnOptions = {},
+): ColumnDef<NotificationTableFeatures, Notification>[] {
   const { onViewDetails, onResend, onPreviewRender, onCancel } = options;
 
-  const columns: ColumnDef<Notification>[] = [
+  const columns: ColumnDef<NotificationTableFeatures, Notification>[] = [
     {
       accessorKey: 'id',
       header: 'ID',
       cell: ({ row }) => <span className="font-mono text-xs">{row.original.id}</span>,
-      size: 90,
     },
 
     {
@@ -168,7 +177,6 @@ export function createColumns(options: ColumnOptions = {}): ColumnDef<Notificati
           {row.original.title || '—'}
         </span>
       ),
-      size: 160,
     },
 
     {
@@ -178,7 +186,6 @@ export function createColumns(options: ColumnOptions = {}): ColumnDef<Notificati
         const type = row.original.notificationType;
         return <Badge variant={typeVariantMap[type]}>{type}</Badge>;
       },
-      size: 70,
     },
 
     {
@@ -188,7 +195,6 @@ export function createColumns(options: ColumnOptions = {}): ColumnDef<Notificati
         const status = row.original.status;
         return <Badge variant={statusVariantMap[status]}>{status}</Badge>;
       },
-      size: 90,
     },
 
     {
@@ -199,7 +205,6 @@ export function createColumns(options: ColumnOptions = {}): ColumnDef<Notificati
           {row.original.contextName || '—'}
         </span>
       ),
-      size: 100,
     },
 
     {
@@ -210,7 +215,6 @@ export function createColumns(options: ColumnOptions = {}): ColumnDef<Notificati
           {row.original.tenant || '—'}
         </span>
       ),
-      size: 100,
     },
 
     {
@@ -224,34 +228,30 @@ export function createColumns(options: ColumnOptions = {}): ColumnDef<Notificati
           </span>
         );
       },
-      size: 180,
     },
 
     {
       accessorKey: 'sendAfter',
-      header: renderSortableHeader('Send After'),
+      header: ({ column }) => <SortableHeader label="Send After" column={column} />,
       cell: ({ row }) => (
         <span className="text-xs whitespace-nowrap">{formatDate(row.original.sendAfter)}</span>
       ),
-      size: 130,
     },
 
     {
       accessorKey: 'sentAt',
-      header: renderSortableHeader('Sent At'),
+      header: ({ column }) => <SortableHeader label="Sent At" column={column} />,
       cell: ({ row }) => (
         <span className="text-xs whitespace-nowrap">{formatDate(row.original.sentAt)}</span>
       ),
-      size: 130,
     },
 
     {
       accessorKey: 'createdAt',
-      header: renderSortableHeader('Created At'),
+      header: ({ column }) => <SortableHeader label="Created At" column={column} />,
       cell: ({ row }) => (
         <span className="text-xs whitespace-nowrap">{formatDate(row.original.createdAt)}</span>
       ),
-      size: 130,
     },
 
     {
@@ -338,7 +338,6 @@ export function createColumns(options: ColumnOptions = {}): ColumnDef<Notificati
           </DropdownMenuContent>
         </DropdownMenu>
       ),
-      size: 60,
     },
   ];
 

@@ -168,10 +168,11 @@ previews) now belong to the API, not to this app.
 
 ```bash
 npm run dev            # dev server
-npm test               # jest
-npm run test:coverage  # jest with the coverage thresholds enforced
-npm run typecheck      # tsc --noEmit
-npm run lint           # eslint
+npm test               # vitest
+npm run test:coverage  # vitest with the coverage thresholds enforced
+npm run typecheck      # tsc --noEmit (TypeScript 7)
+npm run lint           # biome check (lint + formatting + import order)
+npm run format         # biome check --write
 npm run build          # production build
 ```
 

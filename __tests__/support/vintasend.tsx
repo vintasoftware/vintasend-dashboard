@@ -9,16 +9,17 @@
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, type RenderOptions } from '@testing-library/react';
+import { type RenderOptions, render } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
-import { VintaSendProvider, createVintaSendClient } from 'vintasend-dashboard-core';
+import { createVintaSendClient, VintaSendProvider } from 'vintasend-dashboard-core';
+import type { Mock } from 'vitest';
 
 export type StubbedResponse = {
   status?: number;
   body: unknown;
 };
 
-export type FetchStub = jest.Mock<Promise<Response>, [Request]>;
+export type FetchStub = Mock<(request: Request) => Promise<Response>>;
 
 /**
  * Builds a `fetch` that answers from a path -> response map. Keys are matched
@@ -26,7 +27,7 @@ export type FetchStub = jest.Mock<Promise<Response>, [Request]>;
  * '/api/v1/notifications' without spelling out the query string.
  */
 export function createFetchStub(routes: Record<string, StubbedResponse>): FetchStub {
-  return jest.fn(async (request: Request) => {
+  return vi.fn(async (request: Request) => {
     const url = typeof request === 'string' ? request : request.url;
     const match = Object.keys(routes)
       // Longest key first, so '/notifications/{id}/preview' wins over

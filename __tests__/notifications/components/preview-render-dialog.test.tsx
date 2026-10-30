@@ -8,17 +8,16 @@
  * presented as a failure. Anything else is.
  */
 
-import '@testing-library/jest-dom';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { PreviewRenderDialog } from '@/app/components/preview-render-dialog';
 
-const mockFetchNotificationPreview = jest.fn();
+const mockFetchNotificationPreview = vi.fn();
 
-jest.mock('vintasend-dashboard-core', () => {
-  const actual = jest.requireActual('vintasend-dashboard-core');
-  const react = jest.requireActual('react');
+vi.mock('vintasend-dashboard-core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vintasend-dashboard-core')>();
+  const react = await vi.importActual<typeof import('react')>('react');
 
   return {
     ...actual,
@@ -61,14 +60,14 @@ const successPreview = {
 const apiError = (code: string, message: string) => ({ error: { code, message } });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('PreviewRenderDialog', () => {
   it('loads the preview by notification ID and renders both rendered templates', async () => {
     mockFetchNotificationPreview.mockResolvedValueOnce(successPreview);
 
-    render(<PreviewRenderDialog notificationId="notif-1" onClose={jest.fn()} />);
+    render(<PreviewRenderDialog notificationId="notif-1" onClose={vi.fn()} />);
 
     await waitFor(() => {
       expect(mockFetchNotificationPreview).toHaveBeenCalledWith('notif-1');
@@ -90,7 +89,7 @@ describe('PreviewRenderDialog', () => {
       subjectTemplatePath: null,
     });
 
-    render(<PreviewRenderDialog notificationId="notif-1" onClose={jest.fn()} />);
+    render(<PreviewRenderDialog notificationId="notif-1" onClose={vi.fn()} />);
 
     await screen.findByTestId('preview-render-success');
     expect(screen.queryByTestId('preview-render-subject-html')).not.toBeInTheDocument();
@@ -101,7 +100,7 @@ describe('PreviewRenderDialog', () => {
       apiError('PREVIEW_UNAVAILABLE', 'No commit SHA was recorded for this notification.'),
     );
 
-    render(<PreviewRenderDialog notificationId="notif-2" onClose={jest.fn()} />);
+    render(<PreviewRenderDialog notificationId="notif-2" onClose={vi.fn()} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('preview-render-missing-sha')).toBeInTheDocument();
@@ -117,7 +116,7 @@ describe('PreviewRenderDialog', () => {
       apiError('UPSTREAM_ERROR', 'GitHub could not be reached.'),
     );
 
-    render(<PreviewRenderDialog notificationId="notif-3" onClose={jest.fn()} />);
+    render(<PreviewRenderDialog notificationId="notif-3" onClose={vi.fn()} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('preview-render-error')).toBeInTheDocument();
@@ -129,7 +128,7 @@ describe('PreviewRenderDialog', () => {
   it('falls back to a readable message when the failure is not from the API', async () => {
     mockFetchNotificationPreview.mockRejectedValueOnce(new Error('Network request failed'));
 
-    render(<PreviewRenderDialog notificationId="notif-4" onClose={jest.fn()} />);
+    render(<PreviewRenderDialog notificationId="notif-4" onClose={vi.fn()} />);
 
     expect(await screen.findByText('Network request failed')).toBeInTheDocument();
   });
@@ -142,7 +141,7 @@ describe('PreviewRenderDialog', () => {
       }),
     );
 
-    render(<PreviewRenderDialog notificationId="notif-5" onClose={jest.fn()} />);
+    render(<PreviewRenderDialog notificationId="notif-5" onClose={vi.fn()} />);
 
     expect(screen.getByTestId('preview-render-loading')).toBeInTheDocument();
 
@@ -151,7 +150,7 @@ describe('PreviewRenderDialog', () => {
   });
 
   it('does not fetch anything while no notification is selected', () => {
-    render(<PreviewRenderDialog notificationId={null} onClose={jest.fn()} />);
+    render(<PreviewRenderDialog notificationId={null} onClose={vi.fn()} />);
 
     expect(mockFetchNotificationPreview).not.toHaveBeenCalled();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
@@ -159,7 +158,7 @@ describe('PreviewRenderDialog', () => {
 });
 
 describe('copying and dismissing', () => {
-  const writeText = jest.fn();
+  const writeText = vi.fn();
 
   /**
    * userEvent.setup() installs its own clipboard stub, so the spy has to be put
@@ -179,7 +178,7 @@ describe('copying and dismissing', () => {
     const user = setupWithClipboard();
     mockFetchNotificationPreview.mockResolvedValueOnce(successPreview);
 
-    render(<PreviewRenderDialog notificationId="notif-1" onClose={jest.fn()} />);
+    render(<PreviewRenderDialog notificationId="notif-1" onClose={vi.fn()} />);
     await screen.findByTestId('preview-render-success');
 
     for (const button of screen.getAllByRole('button', { name: /Copy/ })) {
@@ -193,7 +192,7 @@ describe('copying and dismissing', () => {
   });
 
   it('closes when the dialog is dismissed', async () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     const user = setupWithClipboard();
     mockFetchNotificationPreview.mockResolvedValueOnce(successPreview);
 

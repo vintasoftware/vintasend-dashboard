@@ -1,4 +1,3 @@
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -6,12 +5,12 @@ import { CancelNotificationDialog } from '@/app/components/cancel-notification-d
 
 describe('CancelNotificationDialog', () => {
   it('does not call onConfirm before user confirmation', () => {
-    const onConfirm = jest.fn().mockResolvedValue(undefined);
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
 
     render(
       <CancelNotificationDialog
         notificationId="notif-123"
-        onClose={jest.fn()}
+        onClose={vi.fn()}
         onConfirm={onConfirm}
       />,
     );
@@ -21,12 +20,12 @@ describe('CancelNotificationDialog', () => {
 
   it('calls onConfirm only after clicking confirm action', async () => {
     const user = userEvent.setup();
-    const onConfirm = jest.fn().mockResolvedValue(undefined);
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
 
     render(
       <CancelNotificationDialog
         notificationId="notif-123"
-        onClose={jest.fn()}
+        onClose={vi.fn()}
         onConfirm={onConfirm}
       />,
     );

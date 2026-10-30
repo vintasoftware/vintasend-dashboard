@@ -3,11 +3,10 @@
  * Tests rendering, pagination, loading states, and integration with TanStack Table.
  */
 
-import '@testing-library/jest-dom';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { NotificationsTable } from '@/app/components/notifications-table';
 import type { Notification } from 'vintasend-dashboard-core';
+import { NotificationsTable } from '@/app/components/notifications-table';
 
 /**
  * Mock notification data for testing.
@@ -188,7 +187,7 @@ describe('NotificationsTable — Phase 3', () => {
           hasMore={true}
           currentPage={1}
           pageSize={10}
-          onPaginationChange={jest.fn()}
+          onPaginationChange={vi.fn()}
         />,
       );
 
@@ -213,7 +212,7 @@ describe('NotificationsTable — Phase 3', () => {
 
     it('calls onPaginationChange with page + 1 when clicking Next', async () => {
       const user = userEvent.setup();
-      const handlePaginationChange = jest.fn();
+      const handlePaginationChange = vi.fn();
 
       render(
         <NotificationsTable
@@ -225,18 +224,14 @@ describe('NotificationsTable — Phase 3', () => {
         />,
       );
 
-      // Find and click the Next button
-      const buttons = screen.getAllByRole('button');
-      const nextButton = buttons.find((btn) => btn.title === 'Next page');
-
-      await user.click(nextButton!);
+      await user.click(screen.getByTitle('Next page'));
 
       expect(handlePaginationChange).toHaveBeenCalledWith(2);
     });
 
     it('calls onPaginationChange with page - 1 when clicking Previous', async () => {
       const user = userEvent.setup();
-      const handlePaginationChange = jest.fn();
+      const handlePaginationChange = vi.fn();
 
       render(
         <NotificationsTable
@@ -248,10 +243,7 @@ describe('NotificationsTable — Phase 3', () => {
         />,
       );
 
-      const buttons = screen.getAllByRole('button');
-      const prevButton = buttons.find((btn) => btn.title === 'Previous page');
-
-      await user.click(prevButton!);
+      await user.click(screen.getByTitle('Previous page'));
 
       expect(handlePaginationChange).toHaveBeenCalledWith(2);
     });
@@ -263,7 +255,7 @@ describe('NotificationsTable — Phase 3', () => {
           hasMore={false}
           currentPage={3}
           pageSize={10}
-          onPaginationChange={jest.fn()}
+          onPaginationChange={vi.fn()}
         />,
       );
 
@@ -280,7 +272,7 @@ describe('NotificationsTable — Phase 3', () => {
           hasMore={true}
           currentPage={1}
           pageSize={10}
-          onPaginationChange={jest.fn()}
+          onPaginationChange={vi.fn()}
         />,
       );
 
@@ -316,14 +308,14 @@ describe('NotificationsTable — Phase 3', () => {
           currentPage={2}
           pageSize={10}
           isLoading={true}
-          onPaginationChange={jest.fn()}
+          onPaginationChange={vi.fn()}
         />,
       );
 
       const buttons = screen.getAllByRole('button');
       // All pagination buttons should be disabled
       buttons.forEach((btn) => {
-        if (btn.title && btn.title.includes('page')) {
+        if (btn.title?.includes('page')) {
           expect(btn).toBeDisabled();
         }
       });
@@ -350,7 +342,7 @@ describe('NotificationsTable — Phase 3', () => {
 
   describe('3.6: Row selection and sorting', () => {
     it('calls onRowClick with the notification id when a row is clicked', async () => {
-      const onRowClick = jest.fn();
+      const onRowClick = vi.fn();
       const user = userEvent.setup();
 
       render(
@@ -369,7 +361,7 @@ describe('NotificationsTable — Phase 3', () => {
     });
 
     it('does not call onRowClick for a skeleton row while loading', async () => {
-      const onRowClick = jest.fn();
+      const onRowClick = vi.fn();
       const user = userEvent.setup();
 
       const { container } = render(
@@ -390,7 +382,7 @@ describe('NotificationsTable — Phase 3', () => {
     });
 
     it('reports a sort when a sortable header is clicked', async () => {
-      const onSortingChange = jest.fn();
+      const onSortingChange = vi.fn();
       const user = userEvent.setup();
 
       render(
@@ -411,7 +403,7 @@ describe('NotificationsTable — Phase 3', () => {
     });
 
     it('resolves the updater against the sort already in the URL', async () => {
-      const onSortingChange = jest.fn();
+      const onSortingChange = vi.fn();
       const user = userEvent.setup();
 
       render(
@@ -435,7 +427,7 @@ describe('NotificationsTable — Phase 3', () => {
   describe('Phase 7: Preview render action', () => {
     it('calls onPreviewRender when clicking Preview render in the actions menu', async () => {
       const user = userEvent.setup();
-      const handlePreviewRender = jest.fn();
+      const handlePreviewRender = vi.fn();
 
       render(
         <NotificationsTable
@@ -458,7 +450,7 @@ describe('NotificationsTable — Phase 3', () => {
 
     it('keeps Preview render enabled for PENDING_SEND notifications without gitCommitSha', async () => {
       const user = userEvent.setup();
-      const handlePreviewRender = jest.fn();
+      const handlePreviewRender = vi.fn();
 
       render(
         <NotificationsTable
@@ -482,7 +474,7 @@ describe('NotificationsTable — Phase 3', () => {
 
     it('disables Preview render for non-PENDING_SEND notifications without gitCommitSha', async () => {
       const user = userEvent.setup();
-      const handlePreviewRender = jest.fn();
+      const handlePreviewRender = vi.fn();
 
       render(
         <NotificationsTable
@@ -514,7 +506,7 @@ describe('NotificationsTable — Phase 3', () => {
           hasMore={false}
           currentPage={1}
           pageSize={10}
-          onCancel={jest.fn()}
+          onCancel={vi.fn()}
         />,
       );
 
@@ -535,7 +527,7 @@ describe('NotificationsTable — Phase 3', () => {
           hasMore={false}
           currentPage={1}
           pageSize={10}
-          onCancel={jest.fn()}
+          onCancel={vi.fn()}
         />,
       );
 
@@ -551,7 +543,7 @@ describe('NotificationsTable — Phase 3', () => {
 
     it('calls onCancel when clicking Cancel in the actions menu', async () => {
       const user = userEvent.setup();
-      const handleCancel = jest.fn();
+      const handleCancel = vi.fn();
 
       render(
         <NotificationsTable

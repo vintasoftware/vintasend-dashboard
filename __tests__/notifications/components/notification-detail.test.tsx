@@ -3,8 +3,7 @@
  * Tests rendering, loading states, error handling, and detail display.
  */
 
-import '@testing-library/jest-dom';
-import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NotificationDetail } from '@/app/components/notification-detail';
 
@@ -16,11 +15,11 @@ import { NotificationDetail } from '@/app/components/notification-detail';
  * `mockFetchNotificationDetail` is what the stand-in resolves from, which keeps
  * every case below written the way it was.
  */
-const mockFetchNotificationDetail = jest.fn();
+const mockFetchNotificationDetail = vi.fn();
 
-jest.mock('vintasend-dashboard-core', () => {
-  const actual = jest.requireActual('vintasend-dashboard-core');
-  const react = jest.requireActual('react');
+vi.mock('vintasend-dashboard-core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vintasend-dashboard-core')>();
+  const react = await vi.importActual<typeof import('react')>('react');
 
   return {
     ...actual,
@@ -123,7 +122,7 @@ const mockOneOffNotificationDetail = {
 
 describe('NotificationDetail — Phase 6', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -134,7 +133,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('opens the panel when notificationId is provided', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       // Sheet should be open (check for sheet content)
       await waitFor(() => {
@@ -143,7 +142,7 @@ describe('NotificationDetail — Phase 6', () => {
     });
 
     it('does not render panel when notificationId is null', () => {
-      render(<NotificationDetail notificationId={null} onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId={null} onClose={vi.fn()} />);
 
       // Sheet should not be open
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -152,7 +151,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('calls fetchNotificationDetail with the correct ID', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         expect(mockFetchNotificationDetail).toHaveBeenCalledWith('notif-123');
@@ -161,13 +160,11 @@ describe('NotificationDetail — Phase 6', () => {
 
     it('shows loading state while fetching', async () => {
       // Create a promise that we can control
-      let resolvePromise: (value: typeof mockNotificationDetail) => void;
-      const pendingPromise = new Promise<typeof mockNotificationDetail>((resolve) => {
-        resolvePromise = resolve;
-      });
+      const { promise: pendingPromise, resolve: resolvePromise } =
+        Promise.withResolvers<typeof mockNotificationDetail>();
       mockFetchNotificationDetail.mockReturnValueOnce(pendingPromise);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       // Should show loading skeleton
       await waitFor(() => {
@@ -176,7 +173,7 @@ describe('NotificationDetail — Phase 6', () => {
 
       // Now resolve the promise
       await act(async () => {
-        resolvePromise!(mockNotificationDetail);
+        resolvePromise(mockNotificationDetail);
       });
 
       // Should no longer show loading
@@ -190,7 +187,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays the notification title in the header', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         expect(screen.getByText('Welcome Email')).toBeInTheDocument();
@@ -200,7 +197,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays the bodyTemplate content', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         const bodyTemplate = screen.getByTestId('body-template');
@@ -212,7 +209,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays the contextUsed content as JSON', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         const contextUsed = screen.getByTestId('context-used');
@@ -225,7 +222,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays status and type badges', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         expect(screen.getByText('EMAIL')).toBeInTheDocument();
@@ -236,7 +233,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays git commit sha when present', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         expect(screen.getByText('Git Commit SHA')).toBeInTheDocument();
@@ -247,7 +244,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('shows fallback when git commit sha is missing', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockOneOffNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-one-off" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-one-off" onClose={vi.fn()} />);
 
       await waitFor(() => {
         expect(screen.getByText('Git Commit SHA')).toBeInTheDocument();
@@ -258,7 +255,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays extraParams when present', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         const extraParams = screen.getByTestId('extra-params');
@@ -270,7 +267,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays one-off notification with emailOrPhone', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockOneOffNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-one-off" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-one-off" onClose={vi.fn()} />);
 
       await waitFor(() => {
         // Should show one-off badge
@@ -287,7 +284,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays attachments list when present', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         const attachmentsList = screen.getByTestId('attachments-list');
@@ -299,7 +296,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays attachment metadata (type, size, description)', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         const attachmentItem = screen.getByTestId('attachment-attach-1');
@@ -312,7 +309,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('shows "No attachments" when attachments array is empty', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockOneOffNotificationDetail);
 
-      render(<NotificationDetail notificationId="notif-one-off" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-one-off" onClose={vi.fn()} />);
 
       await waitFor(() => {
         expect(screen.getByText('No attachments')).toBeInTheDocument();
@@ -323,7 +320,7 @@ describe('NotificationDetail — Phase 6', () => {
   describe('6.4: Closing the panel', () => {
     it('calls onClose when the close button is clicked', async () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
-      const onClose = jest.fn();
+      const onClose = vi.fn();
 
       render(<NotificationDetail notificationId="notif-123" onClose={onClose} />);
 
@@ -342,7 +339,7 @@ describe('NotificationDetail — Phase 6', () => {
       mockFetchNotificationDetail.mockResolvedValueOnce(mockNotificationDetail);
 
       const { rerender } = render(
-        <NotificationDetail notificationId="notif-123" onClose={jest.fn()} />,
+        <NotificationDetail notificationId="notif-123" onClose={vi.fn()} />,
       );
 
       // Wait for content to load
@@ -351,14 +348,14 @@ describe('NotificationDetail — Phase 6', () => {
       });
 
       // Close the panel
-      rerender(<NotificationDetail notificationId={null} onClose={jest.fn()} />);
+      rerender(<NotificationDetail notificationId={null} onClose={vi.fn()} />);
 
       // Panel should be closed
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
       // Reopen with a different notification
       mockFetchNotificationDetail.mockResolvedValueOnce(mockOneOffNotificationDetail);
-      rerender(<NotificationDetail notificationId="notif-one-off" onClose={jest.fn()} />);
+      rerender(<NotificationDetail notificationId="notif-one-off" onClose={vi.fn()} />);
 
       // Should fetch the new notification
       await waitFor(() => {
@@ -371,7 +368,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('displays error message when fetch fails', async () => {
       mockFetchNotificationDetail.mockRejectedValueOnce(new Error('Network error'));
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('notification-detail-error')).toBeInTheDocument();
@@ -382,7 +379,7 @@ describe('NotificationDetail — Phase 6', () => {
     it('provides a retry button on error', async () => {
       mockFetchNotificationDetail.mockRejectedValueOnce(new Error('Network error'));
 
-      render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+      render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
         expect(screen.getByText('Retry')).toBeInTheDocument();
@@ -400,7 +397,7 @@ describe('NotificationDetail — Phase 6', () => {
 
 describe('template versions', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -416,7 +413,7 @@ describe('template versions', () => {
       ...versions,
     });
 
-    render(<NotificationDetail notificationId="notif-123" onClose={jest.fn()} />);
+    render(<NotificationDetail notificationId="notif-123" onClose={vi.fn()} />);
 
     await waitFor(() => {
       expect(screen.getByText('Template Version')).toBeInTheDocument();

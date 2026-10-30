@@ -7,16 +7,16 @@
  * Those rules are asserted here rather than through the table's rendering.
  */
 
-const toastSuccess = jest.fn();
+const toastSuccess = vi.fn();
 
-jest.mock('sonner', () => ({
+vi.mock('sonner', () => ({
   toast: { success: (...args: unknown[]) => toastSuccess(...(args as [])) },
 }));
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { NotificationsTable } from '@/app/components/notifications-table';
 import type { Notification } from 'vintasend-dashboard-core';
+import { NotificationsTable } from '@/app/components/notifications-table';
 
 const userNotification = (overrides: Partial<Notification> = {}): Notification =>
   ({
@@ -64,12 +64,12 @@ const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('row action menu', () => {
   it('invokes onViewDetails with the row id', async () => {
-    const onViewDetails = jest.fn();
+    const onViewDetails = vi.fn();
     const user = userEvent.setup();
     renderTable([userNotification()], { onRowClick: onViewDetails });
 
@@ -81,7 +81,7 @@ describe('row action menu', () => {
 
   it('disables View Details when no handler is wired up', async () => {
     const user = userEvent.setup();
-    renderTable([userNotification()], { onResend: jest.fn() });
+    renderTable([userNotification()], { onResend: vi.fn() });
 
     await openMenu(user);
 
@@ -90,12 +90,12 @@ describe('row action menu', () => {
 
   it('copies the notification id and confirms it to the user', async () => {
     const user = userEvent.setup();
-    const writeText = jest.fn();
+    const writeText = vi.fn();
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText },
       configurable: true,
     });
-    renderTable([userNotification()], { onRowClick: jest.fn() });
+    renderTable([userNotification()], { onRowClick: vi.fn() });
 
     await openMenu(user);
     await user.click(screen.getByRole('menuitem', { name: /Copy ID/ }));
@@ -109,7 +109,7 @@ describe('resend availability', () => {
   it.each(['SENT', 'FAILED'])('offers Resend for a %s user notification', async (status) => {
     const user = userEvent.setup();
     renderTable([userNotification({ status: status as Notification['status'] })], {
-      onResend: jest.fn(),
+      onResend: vi.fn(),
     });
 
     await openMenu(user);
@@ -118,7 +118,7 @@ describe('resend availability', () => {
   });
 
   it('calls onResend with the row id', async () => {
-    const onResend = jest.fn();
+    const onResend = vi.fn();
     const user = userEvent.setup();
     renderTable([userNotification()], { onResend });
 
@@ -130,7 +130,7 @@ describe('resend availability', () => {
 
   it('hides Resend for a pending notification', async () => {
     const user = userEvent.setup();
-    renderTable([userNotification({ status: 'PENDING_SEND' })], { onResend: jest.fn() });
+    renderTable([userNotification({ status: 'PENDING_SEND' })], { onResend: vi.fn() });
 
     await openMenu(user);
 
@@ -139,7 +139,7 @@ describe('resend availability', () => {
 
   it('hides Resend for a one-off notification, which cannot be rebuilt', async () => {
     const user = userEvent.setup();
-    renderTable([oneOffNotification()], { onResend: jest.fn() });
+    renderTable([oneOffNotification()], { onResend: vi.fn() });
 
     await openMenu(user);
 
@@ -148,7 +148,7 @@ describe('resend availability', () => {
 
   it('hides Resend when no handler is provided', async () => {
     const user = userEvent.setup();
-    renderTable([userNotification()], { onRowClick: jest.fn() });
+    renderTable([userNotification()], { onRowClick: vi.fn() });
 
     await openMenu(user);
 
@@ -159,7 +159,7 @@ describe('resend availability', () => {
 describe('preview availability', () => {
   it('enables the preview when a commit SHA was recorded', async () => {
     const user = userEvent.setup();
-    renderTable([userNotification()], { onPreviewRender: jest.fn() });
+    renderTable([userNotification()], { onPreviewRender: vi.fn() });
 
     await openMenu(user);
 
@@ -170,7 +170,7 @@ describe('preview availability', () => {
   });
 
   it('disables the preview for a sent notification with no commit SHA', async () => {
-    const onPreviewRender = jest.fn();
+    const onPreviewRender = vi.fn();
     const user = userEvent.setup();
     renderTable([userNotification({ gitCommitSha: null })], { onPreviewRender });
 

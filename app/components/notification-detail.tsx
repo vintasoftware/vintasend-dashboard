@@ -2,8 +2,12 @@
 
 import { format } from 'date-fns';
 import { Copy, FileText } from 'lucide-react';
+import type {
+  NotificationDetail as NotificationDetailData,
+  NotificationStatus,
+  NotificationType,
+} from 'vintasend-dashboard-core';
 import { getApiErrorMessage, useNotification } from 'vintasend-dashboard-core';
-
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -15,14 +19,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import type {
-  NotificationDetail,
-  NotificationStatus,
-  NotificationType,
-} from 'vintasend-dashboard-core';
 
 /** The detail variant addressed to a raw email or phone rather than a user. */
-type OneOffNotificationDetail = Extract<NotificationDetail, { kind: 'one-off' }>;
+type OneOffNotificationDetail = Extract<NotificationDetailData, { kind: 'one-off' }>;
 
 /**
  * The context payloads are `unknown` in the contract — the API stores whatever
@@ -96,7 +95,7 @@ function formatTemplateVersion(
 /**
  * Determines if a notification is one-off (has emailOrPhone instead of userId).
  */
-function isOneOff(notification: NotificationDetail): notification is OneOffNotificationDetail {
+function isOneOff(notification: NotificationDetailData): notification is OneOffNotificationDetail {
   return notification.kind === 'one-off';
 }
 
@@ -187,7 +186,7 @@ function AttachmentsList({
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
   };
 
   return (
@@ -235,7 +234,7 @@ export function NotificationDetail({ notificationId, onClose }: NotificationDeta
   // opened does not fetch, and closing it does not need a manual state reset.
   const { data, isLoading, isError, error, refetch } = useNotification(notificationId);
 
-  const notification = (data?.data ?? null) as NotificationDetail | null;
+  const notification = (data?.data ?? null) as NotificationDetailData | null;
   const isOpen = notificationId !== null;
 
   const handleClose = () => {

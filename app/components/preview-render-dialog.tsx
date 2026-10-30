@@ -52,6 +52,7 @@ function RenderedHtmlBlock({
       <div
         data-testid={testId}
         className="bg-background border border-border rounded-md p-3 text-sm overflow-x-auto max-h-72 whitespace-pre-wrap break-all"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: the panel exists to show the HTML that the VintaSend API rendered from the notification's template, so it has to be rendered as markup; it is API output, never input typed into the dashboard.
         dangerouslySetInnerHTML={{ __html: html }}
       ></div>
     </div>

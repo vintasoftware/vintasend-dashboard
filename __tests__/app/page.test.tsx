@@ -8,14 +8,14 @@
  * rendering, which is the kind of regression nothing else would catch.
  */
 
-jest.mock('@/app/components/notifications-page-client', () => ({
+vi.mock('@/app/components/notifications-page-client', () => ({
   NotificationsPageClient: () => <div data-testid="page-client" />,
 }));
 
-import type { ReactElement } from 'react';
 import { render, screen } from '@testing-library/react';
-import NotificationsPage from '@/app/page';
+import type { ReactElement } from 'react';
 import { NotificationsLoadingFallback } from '@/app/loading';
+import NotificationsPage from '@/app/page';
 
 describe('NotificationsPage', () => {
   it('wraps the client component in a Suspense boundary', () => {
