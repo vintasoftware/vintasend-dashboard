@@ -2,9 +2,9 @@
  * Tests for the auth status indicator.
  */
 
-const useAuth = jest.fn();
+const useAuth = vi.fn();
 
-jest.mock('@/lib/auth/auth-context', () => ({
+vi.mock('@/lib/auth/auth-context', () => ({
   useAuth: () => useAuth(),
 }));
 
@@ -30,7 +30,7 @@ const withAuth = (user: AuthUser | null, isAuthenticated = !!user) => {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('AuthStatus', () => {

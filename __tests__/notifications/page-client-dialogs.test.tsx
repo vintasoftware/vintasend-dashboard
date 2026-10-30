@@ -7,18 +7,18 @@
  * mocked here so a dialog assertion cannot fail because of a query.
  */
 
-const setFilters = jest.fn();
-const setPage = jest.fn();
-const setSort = jest.fn();
-const refetch = jest.fn();
-const mutateAsync = jest.fn();
-const toastSuccess = jest.fn();
-const toastError = jest.fn();
+const setFilters = vi.fn();
+const setPage = vi.fn();
+const setSort = vi.fn();
+const refetch = vi.fn();
+const mutateAsync = vi.fn();
+const toastSuccess = vi.fn();
+const toastError = vi.fn();
 
 let listState: Record<string, unknown> = {};
 
-jest.mock('vintasend-dashboard-core', () => ({
-  ...jest.requireActual('vintasend-dashboard-core'),
+vi.mock('vintasend-dashboard-core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vintasend-dashboard-core')>()),
   useFilteredNotifications: () => ({
     notifications: [],
     filters: {},
@@ -37,22 +37,22 @@ jest.mock('vintasend-dashboard-core', () => ({
   useCancelNotification: () => ({ mutateAsync, isPending: false }),
 }));
 
-jest.mock('vintasend-dashboard-core/next', () => ({
-  useNextRouterAdapter: () => ({ searchParams: new URLSearchParams(), setSearchParams: jest.fn() }),
+vi.mock('vintasend-dashboard-core/next', () => ({
+  useNextRouterAdapter: () => ({ searchParams: new URLSearchParams(), setSearchParams: vi.fn() }),
 }));
 
-jest.mock('sonner', () => ({
+vi.mock('sonner', () => ({
   toast: {
     success: (...args: unknown[]) => toastSuccess(...(args as [])),
     error: (...args: unknown[]) => toastError(...(args as [])),
   },
 }));
 
-jest.mock('@/app/components/notifications-filters', () => ({
+vi.mock('@/app/components/notifications-filters', () => ({
   NotificationsFilters: () => <div data-testid="filters" />,
 }));
 
-jest.mock('@/app/components/notifications-table', () => ({
+vi.mock('@/app/components/notifications-table', () => ({
   NotificationsTable: (props: Record<string, never>) => {
     const p = props as unknown as {
       onRowClick: (id: string) => void;
@@ -92,7 +92,7 @@ jest.mock('@/app/components/notifications-table', () => ({
   },
 }));
 
-jest.mock('@/app/components/notification-detail', () => ({
+vi.mock('@/app/components/notification-detail', () => ({
   NotificationDetail: (props: Record<string, never>) => {
     const p = props as unknown as { notificationId: string | null; onClose: () => void };
     return (
@@ -105,7 +105,7 @@ jest.mock('@/app/components/notification-detail', () => ({
   },
 }));
 
-jest.mock('@/app/components/preview-render-dialog', () => ({
+vi.mock('@/app/components/preview-render-dialog', () => ({
   PreviewRenderDialog: (props: Record<string, never>) => {
     const p = props as unknown as { notificationId: string | null; onClose: () => void };
     return (
@@ -118,7 +118,7 @@ jest.mock('@/app/components/preview-render-dialog', () => ({
   },
 }));
 
-jest.mock('@/app/components/resend-notification-dialog', () => ({
+vi.mock('@/app/components/resend-notification-dialog', () => ({
   ResendNotificationDialog: (props: Record<string, never>) => {
     const p = props as unknown as { notificationId: string | null; onClose: () => void };
     return (
@@ -131,7 +131,7 @@ jest.mock('@/app/components/resend-notification-dialog', () => ({
   },
 }));
 
-jest.mock('@/app/components/cancel-notification-dialog', () => ({
+vi.mock('@/app/components/cancel-notification-dialog', () => ({
   CancelNotificationDialog: (props: Record<string, never>) => {
     const p = props as unknown as {
       notificationId: string | null;
@@ -164,7 +164,7 @@ const click = (user: ReturnType<typeof userEvent.setup>, name: string) =>
   user.click(screen.getByRole('button', { name }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   listState = {};
   mutateAsync.mockResolvedValue({ data: { id: 'notif-1', status: 'CANCELLED' } });
 });

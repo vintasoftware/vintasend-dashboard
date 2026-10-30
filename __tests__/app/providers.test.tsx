@@ -7,10 +7,10 @@
  * at all. Everything else is wiring the core's two contexts.
  */
 
-const createVintaSendClient = jest.fn(() => ({ fetch: {}, api: {} }));
+const createVintaSendClient = vi.fn(() => ({ fetch: {}, api: {} }));
 
-jest.mock('vintasend-dashboard-core', () => ({
-  ...jest.requireActual('vintasend-dashboard-core'),
+vi.mock('vintasend-dashboard-core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vintasend-dashboard-core')>()),
   createVintaSendClient: (...args: unknown[]) => createVintaSendClient(...(args as [])),
 }));
 
@@ -33,7 +33,7 @@ function Probe() {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('Providers', () => {

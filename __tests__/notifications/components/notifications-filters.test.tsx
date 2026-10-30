@@ -3,7 +3,6 @@
  * Validates rendered controls, initial values, debounced text filters and loading state.
  */
 
-import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NotificationsFilters } from '@/app/components/notifications-filters';
@@ -57,24 +56,24 @@ describe('NotificationsFilters', () => {
     // wall clock and flaked whenever the machine was loaded, so the debounce is
     // stepped explicitly instead of waited out.
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterEach(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
-    const setupUser = () => userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    const setupUser = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
     const flushDebounce = () => {
       act(() => {
-        jest.advanceTimersByTime(DEBOUNCE_MS);
+        vi.advanceTimersByTime(DEBOUNCE_MS);
       });
     };
 
     it('debounces adapterUsed input and calls callback after inactivity', async () => {
       const user = setupUser();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(<NotificationsFilters onFiltersChange={onFiltersChange} />);
 
@@ -91,7 +90,7 @@ describe('NotificationsFilters', () => {
 
     it('includes existing select filters in debounced text callback', async () => {
       const user = setupUser();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(
         <NotificationsFilters
@@ -112,7 +111,7 @@ describe('NotificationsFilters', () => {
 
     it('clears a text filter while preserving other active filters', async () => {
       const user = setupUser();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(
         <NotificationsFilters
@@ -136,7 +135,7 @@ describe('NotificationsFilters', () => {
 
     it('fires once for a burst of keystrokes rather than once per character', async () => {
       const user = setupUser();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(<NotificationsFilters onFiltersChange={onFiltersChange} />);
 
@@ -144,7 +143,7 @@ describe('NotificationsFilters', () => {
       await user.type(input, 'user');
       // Part-way through the window a new keystroke restarts the timer.
       act(() => {
-        jest.advanceTimersByTime(DEBOUNCE_MS - 100);
+        vi.advanceTimersByTime(DEBOUNCE_MS - 100);
       });
       await user.type(input, '-123');
       flushDebounce();
@@ -157,7 +156,7 @@ describe('NotificationsFilters', () => {
   describe('select filters', () => {
     it('fires immediately when a status is picked, without waiting for the debounce', async () => {
       const user = userEvent.setup();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(<NotificationsFilters onFiltersChange={onFiltersChange} />);
 
@@ -169,7 +168,7 @@ describe('NotificationsFilters', () => {
 
     it('fires immediately when a type is picked', async () => {
       const user = userEvent.setup();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(<NotificationsFilters onFiltersChange={onFiltersChange} />);
 
@@ -181,7 +180,7 @@ describe('NotificationsFilters', () => {
 
     it('drops the status filter entirely when reset to "All Statuses"', async () => {
       const user = userEvent.setup();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(
         <NotificationsFilters
@@ -199,7 +198,7 @@ describe('NotificationsFilters', () => {
 
     it('drops the type filter when reset to "All Types"', async () => {
       const user = userEvent.setup();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(
         <NotificationsFilters
@@ -281,7 +280,7 @@ describe('NotificationsFilters', () => {
 
     it('clearing a created-at range reports the remaining filters', async () => {
       const user = userEvent.setup();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(
         <NotificationsFilters
@@ -302,7 +301,7 @@ describe('NotificationsFilters', () => {
 
     it('clearing a sent-at range reports the remaining filters', async () => {
       const user = userEvent.setup();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(
         <NotificationsFilters
@@ -321,7 +320,7 @@ describe('NotificationsFilters', () => {
 
     it('sends both ends of a range as ISO timestamps', async () => {
       const user = userEvent.setup();
-      const onFiltersChange = jest.fn();
+      const onFiltersChange = vi.fn();
 
       render(
         <NotificationsFilters
@@ -347,20 +346,20 @@ describe('NotificationsFilters', () => {
 
   describe('unmount', () => {
     it('does not fire a pending debounce after the component is gone', async () => {
-      jest.useFakeTimers();
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
-      const onFiltersChange = jest.fn();
+      vi.useFakeTimers();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const onFiltersChange = vi.fn();
 
       const { unmount } = render(<NotificationsFilters onFiltersChange={onFiltersChange} />);
       await user.type(screen.getByLabelText('Adapter Used'), 'sendgrid');
       unmount();
 
       act(() => {
-        jest.advanceTimersByTime(DEBOUNCE_MS * 2);
+        vi.advanceTimersByTime(DEBOUNCE_MS * 2);
       });
 
       expect(onFiltersChange).not.toHaveBeenCalled();
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 
@@ -411,9 +410,9 @@ describe('NotificationsFilters', () => {
     });
 
     it('does not re-seed when the incoming filters are the ones it just emitted', async () => {
-      jest.useFakeTimers();
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
-      const onFiltersChange = jest.fn();
+      vi.useFakeTimers();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const onFiltersChange = vi.fn();
 
       const { rerender } = render(
         <NotificationsFilters onFiltersChange={onFiltersChange} initialFilters={{}} />,
@@ -421,7 +420,7 @@ describe('NotificationsFilters', () => {
 
       await user.type(screen.getByLabelText('Adapter Used'), 'send');
       act(() => {
-        jest.advanceTimersByTime(DEBOUNCE_MS);
+        vi.advanceTimersByTime(DEBOUNCE_MS);
       });
 
       // The parent writes the emitted filters to the URL and hands them back.
@@ -436,7 +435,7 @@ describe('NotificationsFilters', () => {
       await user.type(screen.getByLabelText('Adapter Used'), 'grid');
       expect(screen.getByLabelText('Adapter Used')).toHaveValue('sendgrid');
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('ignores a rerender that changes nothing', () => {

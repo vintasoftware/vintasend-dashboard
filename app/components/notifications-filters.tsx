@@ -1,9 +1,20 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
+import { format } from 'date-fns';
+import { CalendarIcon, X } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { DateRange } from 'react-day-picker';
+import {
+  NOTIFICATION_STATUSES,
+  NOTIFICATION_TYPES,
+  type NotificationFilters,
+  type NotificationStatus,
+  type NotificationType,
+} from 'vintasend-dashboard-core';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
@@ -12,16 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  NOTIFICATION_STATUSES,
-  NOTIFICATION_TYPES,
-  type NotificationFilters,
-  type NotificationStatus,
-  type NotificationType,
-} from 'vintasend-dashboard-core';
-import { CalendarIcon, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { type DateRange } from 'react-day-picker';
 
 /**
  * Builds the calendar's range value from the two ISO bounds the filter uses.
@@ -423,7 +424,7 @@ export function NotificationsFilters({
       {/* Row 3: Date Ranges */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-2">
         <div className="w-full sm:w-auto">
-          <label className="text-sm font-medium text-muted-foreground mb-2 block">Created At</label>
+          <span className="text-sm font-medium text-muted-foreground mb-2 block">Created At</span>
           <div className="flex items-center gap-1">
             <Popover>
               <PopoverTrigger asChild>
@@ -466,7 +467,7 @@ export function NotificationsFilters({
         </div>
 
         <div className="w-full sm:w-auto">
-          <label className="text-sm font-medium text-muted-foreground mb-2 block">Sent At</label>
+          <span className="text-sm font-medium text-muted-foreground mb-2 block">Sent At</span>
           <div className="flex items-center gap-1">
             <Popover>
               <PopoverTrigger asChild>

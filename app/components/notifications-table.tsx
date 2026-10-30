@@ -1,10 +1,10 @@
 'use client';
 'use no memo';
 
-import type { Cell, Row, SortingState } from '@tanstack/react-table';
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import type { Row, SortingState } from '@tanstack/react-table';
+import { flexRender, useTable } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
+import type { Notification } from 'vintasend-dashboard-core';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -15,8 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { Notification } from 'vintasend-dashboard-core';
-import { createColumns, columns as defaultColumns } from './columns';
+import {
+  createColumns,
+  columns as defaultColumns,
+  type NotificationTableFeatures,
+  notificationTableFeatures,
+} from './columns';
 
 type SkeletonRow = {
   id: string;
@@ -24,10 +28,14 @@ type SkeletonRow = {
   isSkeleton: true;
 };
 
-type DataRow = Row<Notification> & {
+// The table row is kept as a reference rather than spread: TanStack Table keeps
+// row methods such as `getAllCells` on the prototype, so a spread copy
+// would lose them.
+type DataRow = {
   id: string;
   original: Notification;
   isSkeleton: false;
+  row: Row<NotificationTableFeatures, Notification>;
 };
 
 interface NotificationsTableProps {
@@ -113,13 +121,10 @@ export function NotificationsTable({
       ? createColumns({ onViewDetails: onRowClick, onResend, onPreviewRender, onCancel })
       : defaultColumns;
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features: notificationTableFeatures,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualFiltering: true,
     manualSorting: true,
     state: {
       sorting,
@@ -131,17 +136,21 @@ export function NotificationsTable({
 
   // Show skeleton rows while loading
   const displayRows = isLoading
-    ? Array.from({ length: pageSize }).map((_, i): SkeletonRow => ({
-        id: `skeleton-${i}`,
-        original: null,
-        isSkeleton: true,
-      }))
-    : rows.map((row): DataRow => ({
-        ...row,
-        id: row.id,
-        original: row.original,
-        isSkeleton: false,
-      }));
+    ? Array.from({ length: pageSize }).map(
+        (_, i): SkeletonRow => ({
+          id: `skeleton-${i}`,
+          original: null,
+          isSkeleton: true,
+        }),
+      )
+    : rows.map(
+        (row): DataRow => ({
+          id: row.id,
+          original: row.original,
+          isSkeleton: false,
+          row,
+        }),
+      );
 
   return (
     <div className="space-y-4">
@@ -187,13 +196,13 @@ export function NotificationsTable({
                 >
                   {row.isSkeleton
                     ? // Skeleton row
-                      Array.from({ length: columns.length }).map((_, i) => (
-                        <TableCell key={`${row.id}-skeleton-${i}`} className="py-2 px-3">
+                      table.getAllLeafColumns().map((column) => (
+                        <TableCell key={`${row.id}-skeleton-${column.id}`} className="py-2 px-3">
                           <Skeleton className="h-4 w-full" />
                         </TableCell>
                       ))
                     : // Normal row
-                      row.getVisibleCells().map((cell: Cell<Notification, unknown>) => (
+                      row.row.getAllCells().map((cell) => (
                         <TableCell key={cell.id} className="py-2 px-3">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>

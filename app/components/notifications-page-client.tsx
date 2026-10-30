@@ -6,19 +6,18 @@ import { toast } from 'sonner';
 import {
   getApiErrorMessage,
   NOTIFICATION_ORDER_BY_FIELDS,
-  useCancelNotification,
-  useFilteredNotifications,
   type NotificationFilters,
   type NotificationOrderByField,
+  useCancelNotification,
+  useFilteredNotifications,
 } from 'vintasend-dashboard-core';
 import { useNextRouterAdapter } from 'vintasend-dashboard-core/next';
-
+import { CancelNotificationDialog } from './cancel-notification-dialog';
+import { NotificationDetail } from './notification-detail';
 import { NotificationsFilters } from './notifications-filters';
 import { NotificationsTable } from './notifications-table';
-import { NotificationDetail } from './notification-detail';
-import { ResendNotificationDialog } from './resend-notification-dialog';
 import { PreviewRenderDialog } from './preview-render-dialog';
-import { CancelNotificationDialog } from './cancel-notification-dialog';
+import { ResendNotificationDialog } from './resend-notification-dialog';
 
 /**
  * The notifications page.

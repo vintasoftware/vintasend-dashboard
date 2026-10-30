@@ -1,6 +1,8 @@
 'use client';
 
-import { useAuth } from '@/lib/auth/auth-context';
+import { LogOut } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,9 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, User } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useAuth } from '@/lib/auth/auth-context';
 
 /**
  * Top navigation bar with user menu and logout button.
@@ -30,12 +30,6 @@ export function TopNavbar() {
   }
 
   const displayName = user.name || user.email || 'User';
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 
   return (
     <nav className="border-b bg-card">

@@ -1,8 +1,8 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
-import { VintaSendProvider, createVintaSendClient } from 'vintasend-dashboard-core';
+import { type ReactNode, useState } from 'react';
+import { createVintaSendClient, VintaSendProvider } from 'vintasend-dashboard-core';
 
 /**
  * Client-side data layer.

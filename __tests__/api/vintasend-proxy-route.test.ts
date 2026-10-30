@@ -1,6 +1,4 @@
-/**
- * @jest-environment node
- */
+// @vitest-environment node
 
 /**
  * Tests for the VintaSend proxy route.
@@ -12,22 +10,24 @@
  * survive the hop, or the core's error helpers stop working in the browser.
  */
 
-const isAuthenticated = jest.fn();
-const resolveAuthStrategy: jest.Mock = jest.fn(() => ({ isAuthenticated }));
-const assertValidAuthConfig: jest.Mock = jest.fn();
+import type { Mock } from 'vitest';
 
-jest.mock('@/lib/auth', () => ({
+const isAuthenticated = vi.fn();
+const resolveAuthStrategy: Mock = vi.fn(() => ({ isAuthenticated }));
+const assertValidAuthConfig: Mock = vi.fn();
+
+vi.mock('@/lib/auth', () => ({
   resolveAuthStrategy: (...args: unknown[]) => resolveAuthStrategy(...(args as [])),
 }));
 
-jest.mock('@/lib/auth/validate-config', () => ({
+vi.mock('@/lib/auth/validate-config', () => ({
   assertValidAuthConfig: (...args: unknown[]) => assertValidAuthConfig(...(args as [])),
 }));
 
 import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/vintasend/[...path]/route';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 const context = (path: string[]) => ({ params: Promise.resolve({ path }) });
 
@@ -46,7 +46,7 @@ const savedEnv = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   isAuthenticated.mockResolvedValue(true);
   resolveAuthStrategy.mockReturnValue({ isAuthenticated });
   fetchMock.mockResolvedValue(upstream({ data: [] }));
@@ -96,7 +96,7 @@ describe('authentication', () => {
   });
 
   it('answers 500, never 401, when the dashboard itself is misconfigured', async () => {
-    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     resolveAuthStrategy.mockImplementation(() => {
       throw new Error('AUTH_PROVIDER env var is required');
     });

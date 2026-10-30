@@ -8,12 +8,12 @@
  * string, or a query string the list request ignores.
  */
 
-const replace = jest.fn();
-const push = jest.fn();
+const replace = vi.fn();
+const push = vi.fn();
 
 let currentSearch = '';
 
-jest.mock('next/navigation', () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace, push }),
   usePathname: () => '/',
   useSearchParams: () => new URLSearchParams(currentSearch),
@@ -24,9 +24,9 @@ import userEvent from '@testing-library/user-event';
 import { NotificationsPageClient } from '@/app/components/notifications-page-client';
 import {
   createFetchStub,
+  type FetchStub,
   paginated,
   renderWithVintaSend,
-  type FetchStub,
 } from '../support/vintasend';
 
 const notification = (overrides: Record<string, unknown> = {}) => ({
@@ -75,7 +75,7 @@ const lastReplacedQuery = () =>
   new URL(String(replace.mock.calls.at(-1)?.[0]), 'http://localhost').searchParams;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   currentSearch = '';
 });
 

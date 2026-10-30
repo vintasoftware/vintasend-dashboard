@@ -1,8 +1,7 @@
-import { NextResponse, type NextRequest } from 'next/server';
-
+import { type NextRequest, NextResponse } from 'next/server';
+import type { ApiErrorCode } from 'vintasend-dashboard-core';
 import { resolveAuthStrategy } from '@/lib/auth';
 import { assertValidAuthConfig } from '@/lib/auth/validate-config';
-import type { ApiErrorCode } from 'vintasend-dashboard-core';
 
 /**
  * Same-origin proxy to the VintaSend API.
