@@ -8,7 +8,9 @@ import {
   Eye,
   FileText,
   HashIcon,
+  Pin,
   RefreshCw,
+  RotateCcw,
   XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -123,7 +125,26 @@ export interface ColumnOptions {
    * Only shown for notifications with status PENDING_SEND.
    */
   onCancel?: (id: string) => void;
+
+  /**
+   * Callback fired when "Requeue" is clicked.
+   * Only shown for notifications with status FAILED or CANCELLED.
+   */
+  onRequeue?: (id: string) => void;
+
+  /**
+   * Callback fired when "Repin template" is clicked.
+   * Only shown for notifications that have not been delivered: PENDING_SEND,
+   * FAILED or CANCELLED.
+   */
+  onRepin?: (id: string) => void;
 }
+
+/** Statuses `POST /notifications/{id}/requeue` accepts. */
+const REQUEUEABLE_STATUSES: readonly NotificationStatus[] = ['FAILED', 'CANCELLED'];
+
+/** Statuses `POST /notifications/{id}/repin` accepts. */
+const REPINNABLE_STATUSES: readonly NotificationStatus[] = ['PENDING_SEND', 'FAILED', 'CANCELLED'];
 
 function SortableHeader({
   label,
@@ -160,7 +181,7 @@ export type NotificationTableFeatures = typeof notificationTableFeatures;
 export function createColumns(
   options: ColumnOptions = {},
 ): ColumnDef<NotificationTableFeatures, Notification>[] {
-  const { onViewDetails, onResend, onPreviewRender, onCancel } = options;
+  const { onViewDetails, onResend, onPreviewRender, onCancel, onRequeue, onRepin } = options;
 
   const columns: ColumnDef<NotificationTableFeatures, Notification>[] = [
     {
@@ -334,6 +355,34 @@ export function createColumns(
                   Cancel
                 </DropdownMenuItem>
               </>
+            )}
+            {((onRequeue && REQUEUEABLE_STATUSES.includes(row.original.status)) ||
+              (onRepin && REPINNABLE_STATUSES.includes(row.original.status))) && (
+              <DropdownMenuSeparator />
+            )}
+            {onRepin && REPINNABLE_STATUSES.includes(row.original.status) && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRepin(row.original.id);
+                }}
+                data-testid={`repin-${row.original.id}`}
+              >
+                <Pin className="h-4 w-4 mr-2" />
+                Repin template
+              </DropdownMenuItem>
+            )}
+            {onRequeue && REQUEUEABLE_STATUSES.includes(row.original.status) && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRequeue(row.original.id);
+                }}
+                data-testid={`requeue-${row.original.id}`}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Requeue
+              </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
