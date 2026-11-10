@@ -156,6 +156,74 @@ describe('resend availability', () => {
   });
 });
 
+describe('requeue and repin availability', () => {
+  type Status = Notification['status'];
+
+  it.each([
+    ['requeue', 'FAILED', true],
+    ['requeue', 'CANCELLED', true],
+    ['requeue', 'PENDING_SEND', false],
+    ['requeue', 'SENT', false],
+    ['requeue', 'READ', false],
+    ['repin', 'PENDING_SEND', true],
+    ['repin', 'FAILED', true],
+    ['repin', 'CANCELLED', true],
+    ['repin', 'SENT', false],
+    ['repin', 'READ', false],
+  ] as const)('%s is offered for %s: %s', async (action, status, offered) => {
+    const user = userEvent.setup();
+    renderTable([userNotification({ status: status as Status })], {
+      onRequeue: vi.fn(),
+      onRepin: vi.fn(),
+    });
+
+    await openMenu(user);
+
+    if (offered) {
+      expect(screen.getByTestId(`${action}-notif-1`)).toBeInTheDocument();
+    } else {
+      expect(screen.queryByTestId(`${action}-notif-1`)).not.toBeInTheDocument();
+    }
+  });
+
+  it('offers both for a one-off notification, which keeps its id', async () => {
+    const user = userEvent.setup();
+    renderTable([oneOffNotification({ status: 'FAILED' })], {
+      onRequeue: vi.fn(),
+      onRepin: vi.fn(),
+    });
+
+    await openMenu(user);
+
+    expect(screen.getByTestId('requeue-notif-oneoff')).toBeInTheDocument();
+    expect(screen.getByTestId('repin-notif-oneoff')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['requeue', 'onRequeue'],
+    ['repin', 'onRepin'],
+  ])('calls the %s handler with the row id', async (action, handler) => {
+    const callback = vi.fn();
+    const user = userEvent.setup();
+    renderTable([userNotification({ status: 'FAILED' })], { [handler]: callback });
+
+    await openMenu(user);
+    await user.click(screen.getByTestId(`${action}-notif-1`));
+
+    expect(callback).toHaveBeenCalledWith('notif-1');
+  });
+
+  it('hides both when no handler is provided', async () => {
+    const user = userEvent.setup();
+    renderTable([userNotification({ status: 'FAILED' })], { onRowClick: vi.fn() });
+
+    await openMenu(user);
+
+    expect(screen.queryByTestId('requeue-notif-1')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('repin-notif-1')).not.toBeInTheDocument();
+  });
+});
+
 describe('preview availability', () => {
   it('enables the preview when a commit SHA was recorded', async () => {
     const user = userEvent.setup();

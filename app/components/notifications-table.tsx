@@ -72,6 +72,20 @@ interface NotificationsTableProps {
    * @param id - Notification ID
    */
   onCancel?: (id: string) => void;
+
+  /**
+   * Callback fired when the "Requeue" action is clicked.
+   * Only shown for notifications with status FAILED or CANCELLED.
+   * @param id - Notification ID
+   */
+  onRequeue?: (id: string) => void;
+
+  /**
+   * Callback fired when the "Repin template" action is clicked.
+   * Only shown for notifications with status PENDING_SEND, FAILED or CANCELLED.
+   * @param id - Notification ID
+   */
+  onRepin?: (id: string) => void;
 }
 
 /**
@@ -100,6 +114,8 @@ export function NotificationsTable({
   onResend,
   onPreviewRender,
   onCancel,
+  onRequeue,
+  onRepin,
 }: NotificationsTableProps) {
   const sorting: SortingState = orderByField
     ? [
@@ -117,8 +133,15 @@ export function NotificationsTable({
 
   // Create columns with action callbacks
   const columns =
-    onRowClick || onResend || onPreviewRender || onCancel
-      ? createColumns({ onViewDetails: onRowClick, onResend, onPreviewRender, onCancel })
+    onRowClick || onResend || onPreviewRender || onCancel || onRequeue || onRepin
+      ? createColumns({
+          onViewDetails: onRowClick,
+          onResend,
+          onPreviewRender,
+          onCancel,
+          onRequeue,
+          onRepin,
+        })
       : defaultColumns;
 
   const table = useTable({

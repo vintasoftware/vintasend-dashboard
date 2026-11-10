@@ -12,6 +12,8 @@ const setPage = vi.fn();
 const setSort = vi.fn();
 const refetch = vi.fn();
 const mutateAsync = vi.fn();
+const requeueMutateAsync = vi.fn();
+const repinMutateAsync = vi.fn();
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
 
@@ -35,6 +37,8 @@ vi.mock('vintasend-dashboard-core', async (importOriginal) => ({
     ...listState,
   }),
   useCancelNotification: () => ({ mutateAsync, isPending: false }),
+  useRequeueNotification: () => ({ mutateAsync: requeueMutateAsync, isPending: false }),
+  useRepinNotification: () => ({ mutateAsync: repinMutateAsync, isPending: false }),
 }));
 
 vi.mock('vintasend-dashboard-core/next', () => ({
@@ -59,6 +63,8 @@ vi.mock('@/app/components/notifications-table', () => ({
       onResend: (id: string) => void;
       onPreviewRender: (id: string) => void;
       onCancel: (id: string) => void;
+      onRequeue: (id: string) => void;
+      onRepin: (id: string) => void;
       onSortingChange: (sorting: { id: string; desc: boolean }[]) => void;
     };
     return (
@@ -86,6 +92,12 @@ vi.mock('@/app/components/notifications-table', () => ({
         </button>
         <button type="button" onClick={() => p.onCancel('notif-1')}>
           cancel
+        </button>
+        <button type="button" onClick={() => p.onRequeue('notif-1')}>
+          requeue
+        </button>
+        <button type="button" onClick={() => p.onRepin('notif-1')}>
+          repin
         </button>
       </div>
     );
@@ -151,6 +163,28 @@ vi.mock('@/app/components/cancel-notification-dialog', () => ({
   },
 }));
 
+vi.mock('@/app/components/confirm-notification-action-dialog', () => ({
+  ConfirmNotificationActionDialog: (props: Record<string, never>) => {
+    const p = props as unknown as {
+      notificationId: string | null;
+      onClose: () => void;
+      onConfirm: (id: string) => void;
+      confirmTestId: string;
+    };
+    const name = p.confirmTestId.replace('confirm-', '').replace('-notification', '');
+    return (
+      <div data-testid={name} data-id={p.notificationId ?? ''}>
+        <button type="button" onClick={p.onClose}>
+          {`close-${name}`}
+        </button>
+        <button type="button" onClick={() => p.onConfirm('notif-1')}>
+          {`confirm-${name}`}
+        </button>
+      </div>
+    );
+  },
+}));
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NotificationsPageClient } from '@/app/components/notifications-page-client';
@@ -167,6 +201,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   listState = {};
   mutateAsync.mockResolvedValue({ data: { id: 'notif-1', status: 'CANCELLED' } });
+  requeueMutateAsync.mockResolvedValue({ data: { id: 'notif-1', status: 'PENDING_SEND' } });
+  repinMutateAsync.mockResolvedValue({
+    data: { id: 'notif-1', status: 'FAILED', requestedTemplateVersion: 4 },
+  });
 });
 
 describe('opening and closing panels', () => {
@@ -175,6 +213,8 @@ describe('opening and closing panels', () => {
     ['resend', 'resend', 'close-resend'],
     ['preview', 'preview', 'close-preview'],
     ['cancel', 'cancel', 'close-cancel'],
+    ['requeue', 'requeue', 'close-requeue'],
+    ['repin', 'repin', 'close-repin'],
   ])('routes the %s action to the %s panel', async (open, panel, close) => {
     const user = setup();
 
@@ -254,6 +294,77 @@ describe('cancelling a notification', () => {
         'Failed to cancel notification: Network request failed',
       ),
     );
+  });
+});
+
+describe('requeuing a notification', () => {
+  it('sends an empty body, keeping the notification schedule, then confirms and closes', async () => {
+    const user = setup();
+
+    await click(user, 'requeue');
+    await click(user, 'confirm-requeue');
+
+    await waitFor(() =>
+      expect(requeueMutateAsync).toHaveBeenCalledWith({
+        params: { path: { id: 'notif-1' } },
+        body: {},
+      }),
+    );
+    expect(toastSuccess).toHaveBeenCalledWith('Notification requeued.');
+    expect(screen.getByTestId('requeue')).toHaveAttribute('data-id', '');
+  });
+
+  it('reports the API message and leaves the dialog open on failure', async () => {
+    requeueMutateAsync.mockRejectedValue({
+      error: {
+        code: 'CONFLICT',
+        message: 'Only FAILED and CANCELLED notifications can be requeued.',
+      },
+    });
+    const user = setup();
+
+    await click(user, 'requeue');
+    await click(user, 'confirm-requeue');
+
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith(
+        'Failed to requeue notification: Only FAILED and CANCELLED notifications can be requeued.',
+      ),
+    );
+    expect(screen.getByTestId('requeue')).toHaveAttribute('data-id', 'notif-1');
+  });
+});
+
+describe('repinning a notification', () => {
+  it('repins to the current version and names it to the user', async () => {
+    const user = setup();
+
+    await click(user, 'repin');
+    await click(user, 'confirm-repin');
+
+    await waitFor(() =>
+      expect(repinMutateAsync).toHaveBeenCalledWith({
+        params: { path: { id: 'notif-1' } },
+        body: {},
+      }),
+    );
+    expect(toastSuccess).toHaveBeenCalledWith('Notification pinned to template version 4.');
+    expect(screen.getByTestId('repin')).toHaveAttribute('data-id', '');
+  });
+
+  it('reports the API message and leaves the dialog open on failure', async () => {
+    repinMutateAsync.mockRejectedValue({
+      error: { code: 'CONFLICT', message: 'No version to pin.' },
+    });
+    const user = setup();
+
+    await click(user, 'repin');
+    await click(user, 'confirm-repin');
+
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith('Failed to repin notification: No version to pin.'),
+    );
+    expect(screen.getByTestId('repin')).toHaveAttribute('data-id', 'notif-1');
   });
 });
 

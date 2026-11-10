@@ -1,6 +1,7 @@
 'use client';
 
 import type { SortingState } from '@tanstack/react-table';
+import { Pin, RotateCcw } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -10,9 +11,12 @@ import {
   type NotificationOrderByField,
   useCancelNotification,
   useFilteredNotifications,
+  useRepinNotification,
+  useRequeueNotification,
 } from 'vintasend-dashboard-core';
 import { useNextRouterAdapter } from 'vintasend-dashboard-core/next';
 import { CancelNotificationDialog } from './cancel-notification-dialog';
+import { ConfirmNotificationActionDialog } from './confirm-notification-action-dialog';
 import { NotificationDetail } from './notification-detail';
 import { NotificationsFilters } from './notifications-filters';
 import { NotificationsTable } from './notifications-table';
@@ -24,8 +28,9 @@ import { ResendNotificationDialog } from './resend-notification-dialog';
  *
  * Everything data-shaped here comes from `vintasend-dashboard-core`:
  * `useFilteredNotifications` reads the filters out of the URL, runs the list
- * query, and hands back pagination helpers, while `useCancelNotification`
- * writes and invalidates the affected caches. What is left is this app's own
+ * query, and hands back pagination helpers, while `useCancelNotification`,
+ * `useRequeueNotification` and `useRepinNotification` write and invalidate the
+ * affected caches. What is left is this app's own
  * UI — which dialog is open, and how a failure is reported.
  *
  * That split is the point of the example. A dashboard with a different design
@@ -56,7 +61,12 @@ export function NotificationsPageClient() {
   const [previewNotificationId, setPreviewNotificationId] = useState<string | null>(null);
   const [cancelNotificationId, setCancelNotificationId] = useState<string | null>(null);
 
+  const [requeueNotificationId, setRequeueNotificationId] = useState<string | null>(null);
+  const [repinNotificationId, setRepinNotificationId] = useState<string | null>(null);
+
   const cancelMutation = useCancelNotification();
+  const requeueMutation = useRequeueNotification();
+  const repinMutation = useRepinNotification();
 
   const handleFiltersChange = useCallback(
     (next: NotificationFilters) => {
@@ -95,6 +105,41 @@ export function NotificationsPageClient() {
       }
     },
     [cancelMutation],
+  );
+
+  const handleRequeueConfirm = useCallback(
+    async (id: string) => {
+      try {
+        // An empty body keeps the notification's own sendAfter, so a failed
+        // notification whose time has passed goes out right away.
+        await requeueMutation.mutateAsync({ params: { path: { id } }, body: {} });
+
+        toast.success('Notification requeued.');
+        setRequeueNotificationId(null);
+      } catch (mutationError) {
+        toast.error(`Failed to requeue notification: ${getApiErrorMessage(mutationError)}`);
+      }
+    },
+    [requeueMutation],
+  );
+
+  const handleRepinConfirm = useCallback(
+    async (id: string) => {
+      try {
+        const result = await repinMutation.mutateAsync({ params: { path: { id } }, body: {} });
+        const version = result?.data?.requestedTemplateVersion;
+
+        toast.success(
+          version === null || version === undefined
+            ? 'Notification repinned.'
+            : `Notification pinned to template version ${version}.`,
+        );
+        setRepinNotificationId(null);
+      } catch (mutationError) {
+        toast.error(`Failed to repin notification: ${getApiErrorMessage(mutationError)}`);
+      }
+    },
+    [repinMutation],
   );
 
   return (
@@ -141,6 +186,8 @@ export function NotificationsPageClient() {
             onResend={setResendNotificationId}
             onPreviewRender={setPreviewNotificationId}
             onCancel={setCancelNotificationId}
+            onRequeue={setRequeueNotificationId}
+            onRepin={setRepinNotificationId}
           />
         )}
 
@@ -163,6 +210,30 @@ export function NotificationsPageClient() {
           notificationId={cancelNotificationId}
           onClose={() => setCancelNotificationId(null)}
           onConfirm={handleCancelConfirm}
+        />
+
+        <ConfirmNotificationActionDialog
+          notificationId={requeueNotificationId}
+          onClose={() => setRequeueNotificationId(null)}
+          onConfirm={handleRequeueConfirm}
+          icon={RotateCcw}
+          title="Requeue Notification"
+          description="This puts the notification back in the queue under the same ID. It is sent right away if its scheduled time has passed, using the template version it is pinned to."
+          confirmLabel="Requeue"
+          pendingLabel="Requeuing…"
+          confirmTestId="confirm-requeue-notification"
+        />
+
+        <ConfirmNotificationActionDialog
+          notificationId={repinNotificationId}
+          onClose={() => setRepinNotificationId(null)}
+          onConfirm={handleRepinConfirm}
+          icon={Pin}
+          title="Repin Template"
+          description="This pins the notification to the current version of its template, so it renders that version when it is sent. It does not send the notification; requeue a failed one afterwards."
+          confirmLabel="Repin"
+          pendingLabel="Repinning…"
+          confirmTestId="confirm-repin-notification"
         />
       </div>
     </main>
